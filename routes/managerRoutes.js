@@ -4,6 +4,6 @@ const protect = require('../middleware/authMiddleware');
 const permit = require('../middleware/roleMiddleware');
 const router = express.Router();
 
-router.get('/dashboard',protect,permit('admin','manager'),managerDashboard)
+router.get('/dashboard', protect, permit('admin', 'manager'), managerDashboard)
 
 module.exports = router;

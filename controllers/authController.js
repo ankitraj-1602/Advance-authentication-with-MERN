@@ -81,8 +81,8 @@ const login = async (req, res) => {
             return res.status(400).json({ message: 'User is not verified' });
         }
 
-        if(user.twoFA.enabled){
-            return res.status(200).json({require2FA:true})
+        if (user.twoFA.enabled) {
+            return res.status(200).json({ require2FA: true })
         }
 
         const accessToken = generateAccessToken(user._id);
@@ -254,9 +254,9 @@ const twoFASetup = async (req, res) => {
         await user.save();
         const qrImage = await qrcode.toDataURL(secret.otpauth_url);
         res.json({
-            message:'Scan qr code in Google Authenticator',
+            message: 'Scan qr code in Google Authenticator',
             qrImage,
-            secret:secret.base32
+            secret: secret.base32
         })
     } catch (error) {
         console.log(error)
@@ -266,33 +266,33 @@ const twoFASetup = async (req, res) => {
 
 const twoFAVerify = async (req, res) => {
     try {
-        const {token} =req.body;
+        const { token } = req.body;
         const user = await User.findById(req.user._id);
-        if(!user || !user.twoFA.secret){
-            return res.status(400).json({message:'2FA not setup'})
+        if (!user || !user.twoFA.secret) {
+            return res.status(400).json({ message: '2FA not setup' })
         }
         const verified = speakeasy.totp.verify({
-            secret:user.twoFA.secret,
-            encoding:'base32',
+            secret: user.twoFA.secret,
+            encoding: 'base32',
             token,
-            window:1
+            window: 1
         })
-        if(!verified){
-            return res.status(400).json({message:'Invalid token'})
+        if (!verified) {
+            return res.status(400).json({ message: 'Invalid token' })
         }
-        user.twoFA.enabled=true;
+        user.twoFA.enabled = true;
         await user.save();
-        res.json({message:'2FA has been enabled'})
+        res.json({ message: '2FA has been enabled' })
 
     } catch (error) {
         console.log(error)
-        res.status(500).json({message:error.message})
+        res.status(500).json({ message: error.message })
     }
 }
 
 const twoFALogin = async (req, res) => {
     try {
-        const { email, token} = req.body;
+        const { email, token } = req.body;
 
         const user = await User.findOne({ email });
         if (!user || !user.twoFA.secret) {
@@ -300,16 +300,16 @@ const twoFALogin = async (req, res) => {
         }
 
         const verified = speakeasy.totp.verify({
-            secret:user.twoFA.secret,
-            encoding:'base32',
+            secret: user.twoFA.secret,
+            encoding: 'base32',
             token,
-            window:1
+            window: 1
         })
-        
-        if(!verified){
-            return res.status(400).json({message:'Invalid 2FA code'})
+
+        if (!verified) {
+            return res.status(400).json({ message: 'Invalid 2FA code' })
         }
-       
+
 
         const accessToken = generateAccessToken(user._id);
         const refreshToken = generateRefreshToken(user._id);
@@ -332,17 +332,17 @@ const twoFALogin = async (req, res) => {
     }
 }
 
-module.exports = { 
-    register, 
-    login, 
-    profile, 
-    refreshAccessToken, 
-    logout, 
-    verifyEmail, 
-    resetPassword, 
-    forgotPassword, 
+module.exports = {
+    register,
+    login,
+    profile,
+    refreshAccessToken,
+    logout,
+    verifyEmail,
+    resetPassword,
+    forgotPassword,
     googleAuth,
     twoFASetup,
     twoFAVerify,
     twoFALogin
- };
+};

@@ -18,4 +18,4 @@ const generateRefreshToken = (userId) => {
     })
 }
 
-module.exports = {generateAccessToken,generateRefreshToken};
+module.exports = { generateAccessToken, generateRefreshToken };

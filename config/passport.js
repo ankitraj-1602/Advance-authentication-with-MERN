@@ -10,22 +10,22 @@ passport.use(
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
             callbackURL: process.env.GOOGLE_CALLBACK_URL
         },
-        async (accessToken, refreshToken, profile,done) => {
+        async (accessToken, refreshToken, profile, done) => {
             try {
-                let user = await User.findOne({googleId:profile.id})
-                if(!user){
+                let user = await User.findOne({ googleId: profile.id })
+                if (!user) {
                     user = new User({
-                        name:profile.displayName,
-                        email:profile.emails[0].value,
-                        googleId:profile.id,
-                        isVerified:true,
+                        name: profile.displayName,
+                        email: profile.emails[0].value,
+                        googleId: profile.id,
+                        isVerified: true,
 
                     })
                     await user.save();
                 }
-                done(null,user);
+                done(null, user);
             } catch (error) {
-                done(error,false)
+                done(error, false)
             }
         }
     )

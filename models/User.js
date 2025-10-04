@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: function(){
+        required: function () {
             return !this.googleId
         }
     },
@@ -34,16 +34,16 @@ const userSchema = new mongoose.Schema({
         sparse: true
     },
 
-    role:{
-        type:String,
-        enum:['user','admin','manager'],
-        default:'user'
+    role: {
+        type: String,
+        enum: ['user', 'admin', 'manager'],
+        default: 'user'
     },
 
     // field for two FA 
-    twoFA:{
-        enabled:{type:Boolean, default:false},
-        secret:{type:String}
+    twoFA: {
+        enabled: { type: Boolean, default: false },
+        secret: { type: String }
     }
 
 }, {
