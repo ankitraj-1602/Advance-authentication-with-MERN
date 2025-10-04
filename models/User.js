@@ -38,6 +38,12 @@ const userSchema = new mongoose.Schema({
         type:String,
         enum:['user','admin','manager'],
         default:'user'
+    },
+
+    // field for two FA 
+    twoFA:{
+        enabled:{type:Boolean, default:false},
+        secret:{type:String}
     }
 
 }, {

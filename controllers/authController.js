@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const speakeasy = require('speakeasy');
+const qrcode = require('qrcode');
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateToken');
 const generateRandomToken = require('../utils/generateRandomToken');
 const sendMail = require('../utils/sendEmail');
@@ -77,6 +79,10 @@ const login = async (req, res) => {
 
         if (!user.isVerified) {
             return res.status(400).json({ message: 'User is not verified' });
+        }
+
+        if(user.twoFA.enabled){
+            return res.status(200).json({require2FA:true})
         }
 
         const accessToken = generateAccessToken(user._id);
@@ -229,11 +235,114 @@ const googleAuth = async (req, res) => {
             maxAge: 24 * 7 * 60 * 60 * 1000
         })
 
-        res.json({accessToken});
+        res.json({ accessToken });
 
     } catch (error) {
         console.log(error)
         res.status(500).json({ message: error.message })
     }
 }
-module.exports = { register, login, profile, refreshAccessToken, logout, verifyEmail, resetPassword, forgotPassword,googleAuth };
+
+const twoFASetup = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(400).json({ message: "User not found" })
+        const secret = speakeasy.generateSecret({
+            name: `Advance MERN Authentication (${user.email})`
+        })
+        user.twoFA.secret = secret.base32;
+        await user.save();
+        const qrImage = await qrcode.toDataURL(secret.otpauth_url);
+        res.json({
+            message:'Scan qr code in Google Authenticator',
+            qrImage,
+            secret:secret.base32
+        })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: error.message })
+    }
+}
+
+const twoFAVerify = async (req, res) => {
+    try {
+        const {token} =req.body;
+        const user = await User.findById(req.user._id);
+        if(!user || !user.twoFA.secret){
+            return res.status(400).json({message:'2FA not setup'})
+        }
+        const verified = speakeasy.totp.verify({
+            secret:user.twoFA.secret,
+            encoding:'base32',
+            token,
+            window:1
+        })
+        if(!verified){
+            return res.status(400).json({message:'Invalid token'})
+        }
+        user.twoFA.enabled=true;
+        await user.save();
+        res.json({message:'2FA has been enabled'})
+
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({message:error.message})
+    }
+}
+
+const twoFALogin = async (req, res) => {
+    try {
+        const { email, token} = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user || !user.twoFA.secret) {
+            return res.status(400).json({ message: '2FA not setup' })
+        }
+
+        const verified = speakeasy.totp.verify({
+            secret:user.twoFA.secret,
+            encoding:'base32',
+            token,
+            window:1
+        })
+        
+        if(!verified){
+            return res.status(400).json({message:'Invalid 2FA code'})
+        }
+       
+
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'Strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        })
+
+        return res.status(200).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            accessToken
+        })
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
+
+module.exports = { 
+    register, 
+    login, 
+    profile, 
+    refreshAccessToken, 
+    logout, 
+    verifyEmail, 
+    resetPassword, 
+    forgotPassword, 
+    googleAuth,
+    twoFASetup,
+    twoFAVerify,
+    twoFALogin
+ };

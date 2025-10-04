@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, login, profile, refreshAccessToken, logout, verifyEmail, forgotPassword, resetPassword, googleAuth } = require('../controllers/authController');
+const { register, login, profile, refreshAccessToken, logout, verifyEmail, forgotPassword, resetPassword, googleAuth, twoFASetup, twoFAVerify, twoFALogin } = require('../controllers/authController');
 const protect = require('../middleware/authMiddleware');
 const { loginLimiter, forgotPasswordLimiter } = require('../middleware/rateLimiter');
 const passport = require('passport');
@@ -19,6 +19,10 @@ authRouter.post('/forgot-password', forgotPasswordLimiter, forgotPassword)
 authRouter.post('/reset/:token', resetPassword)
 
 authRouter.get('/profile', protect, profile)
+
+authRouter.post('/2fa/setup', protect, twoFASetup);
+authRouter.post('/2fa/verify', protect, twoFAVerify)
+authRouter.post('/2fa/login', twoFALogin)
 
 
 module.exports = authRouter;
