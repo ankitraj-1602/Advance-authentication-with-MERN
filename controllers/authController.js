@@ -74,8 +74,8 @@ const login = async (req, res) => {
             return res.status(400).json({ message: 'Invalid Password' })
         }
 
-        if(!user.isVerified){
-            return res.status(400).json({message:'User is not verified'});
+        if (!user.isVerified) {
+            return res.status(400).json({ message: 'User is not verified' });
         }
 
         const accessToken = generateAccessToken(user._id);
@@ -152,21 +152,21 @@ const verifyEmail = async (req, res) => {
         user.verificationTokenExpiry = undefined;
         await user.save();
 
-        res.send(200).json({message:"Email verified successfully"});
+        res.send(200).json({ message: "Email verified successfully" });
     } catch (error) {
         console.log(error)
-        res.status(500).json({message:error.message})
+        res.status(500).json({ message: error.message })
     }
 }
 
-const forgotPassword = async (req,res) => {
+const forgotPassword = async (req, res) => {
     try {
-        const {email} = req.body;
-        const user = await User.findOne({email});
-        if(!user) return res.status(400).json({message:'User not found'});
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) return res.status(400).json({ message: 'User not found' });
 
         const resetToken = generateRandomToken();
-        const resetTokenExpiry = Date.now() + 1000*60*60;
+        const resetTokenExpiry = Date.now() + 1000 * 60 * 60;
 
         const verificationLink = `http://localhost/api/auth/reset/${resetToken}`;
 
@@ -174,41 +174,65 @@ const forgotPassword = async (req,res) => {
         user.resetTokenExpiry = resetTokenExpiry;
         await user.save();
 
-        await sendMail(email,'Reset your password',
-             `<h3>Password Reset</h3>
+        await sendMail(email, 'Reset your password',
+            `<h3>Password Reset</h3>
                 <p>Click the link below to reset your password:</p>
                 <a href="${verificationLink}">${verificationLink}</a>
              `
         )
 
-        res.status(200).json({message:'Reset link sent to email'})
+        res.status(200).json({ message: 'Reset link sent to email' })
 
     } catch (error) {
         console.log(error)
-        res.status(500).json({message:error.message})
+        res.status(500).json({ message: error.message })
     }
 }
 
-const resetPassword = async (req,res) => {
+const resetPassword = async (req, res) => {
     try {
-        const {token} = req.params;
-        const {password} = req.body;
+        const { token } = req.params;
+        const { password } = req.body;
 
         const user = await User.findOne({
-            resetToken:token,
-            resetTokenExpiry:{$gt:Date.now()}
+            resetToken: token,
+            resetTokenExpiry: { $gt: Date.now() }
         })
-        if(!user) return res.status(400).json({message:'Invalid or expired token'});
-        const hashedPassword = await bcrypt.hash(password,10);
+        if (!user) return res.status(400).json({ message: 'Invalid or expired token' });
+        const hashedPassword = await bcrypt.hash(password, 10);
         user.password = hashedPassword;
         user.resetToken = undefined;
         user.resetTokenExpiry = undefined;
         await user.save();
 
-        res.status(200).json({message:"Password reset successfull"})
+        res.status(200).json({ message: "Password reset successfull" })
     } catch (error) {
         console.log(error);
-        res.status(500).json({message:error.message})
+        res.status(500).json({ message: error.message })
     }
 }
-module.exports = { register, login, profile, refreshAccessToken, logout, verifyEmail,resetPassword,forgotPassword };
+
+const googleAuth = async (req, res) => {
+    try {
+        const payload = {
+            _id: req.user._id
+        }
+
+        const accessToken = generateAccessToken(req.user._id);
+        const refreshToken = generateRefreshToken(req.user._id)
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: false,
+            maxAge: 24 * 7 * 60 * 60 * 1000
+        })
+
+        res.json({accessToken});
+
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: error.message })
+    }
+}
+module.exports = { register, login, profile, refreshAccessToken, logout, verifyEmail, resetPassword, forgotPassword,googleAuth };
