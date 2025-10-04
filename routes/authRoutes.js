@@ -13,10 +13,12 @@ authRouter.get('/google/callback', passport.authenticate('google', { session: fa
 authRouter.post('/register', register);
 authRouter.post('/login', loginLimiter, login);
 authRouter.get('/refresh', refreshAccessToken)
-authRouter.get('/profile', protect, profile)
 authRouter.post('/logout', logout)
 authRouter.get('/verify/:token', verifyEmail)
 authRouter.post('/forgot-password', forgotPasswordLimiter, forgotPassword)
 authRouter.post('/reset/:token', resetPassword)
+
+authRouter.get('/profile', protect, profile)
+
 
 module.exports = authRouter;

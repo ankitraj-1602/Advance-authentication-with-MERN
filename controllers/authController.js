@@ -7,7 +7,7 @@ const sendMail = require('../utils/sendEmail');
 
 const register = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, role } = req.body;
 
         const userExists = await User.findOne({ email });
         if (userExists) {
@@ -25,7 +25,8 @@ const register = async (req, res) => {
             email,
             password: hashedPassword,
             verificationToken,
-            verificationTokenExpiry
+            verificationTokenExpiry,
+            role
         })
 
         const verificationLink = `http://localhost:5000/api/auth/verify/${verificationToken}`;
