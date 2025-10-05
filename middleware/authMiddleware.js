@@ -6,9 +6,9 @@ const protect = async (req, res, next) => {
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
             token = req.headers.authorization.split(" ")[1];
-
+            console.log(token)
             const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-            req.user = await User.findById(decoded._id).select('-password')
+            req.user = await User.findById(decoded._id).select('-password').populate('role')
             next();
         } catch (error) {
             console.error(error);

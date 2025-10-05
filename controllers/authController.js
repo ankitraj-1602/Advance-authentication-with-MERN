@@ -6,6 +6,7 @@ const qrcode = require('qrcode');
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateToken');
 const generateRandomToken = require('../utils/generateRandomToken');
 const sendMail = require('../utils/sendEmail');
+const Role = require('../models/Role');
 
 const register = async (req, res) => {
     try {
@@ -19,6 +20,19 @@ const register = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        let assignedRole;
+        if(role){
+            assignedRole = await Role.findOne({role});
+            if(!assignedRole){
+                return res.status(400).json({message:'Role not found'})
+            }
+        }else{
+            assignedRole = await Role.findOne({role:'user'})
+            if(!assignedRole){
+                return res.status(400).json({message:'Default role user not found'})
+            }
+        }
+
         const verificationToken = generateRandomToken();
         const verificationTokenExpiry = Date.now() + 1000 * 60 * 60;
 
@@ -28,7 +42,7 @@ const register = async (req, res) => {
             password: hashedPassword,
             verificationToken,
             verificationTokenExpiry,
-            role
+            role:assignedRole._id
         })
 
         const verificationLink = `http://localhost:5000/api/auth/verify/${verificationToken}`;
@@ -85,8 +99,8 @@ const login = async (req, res) => {
             return res.status(200).json({ require2FA: true })
         }
 
-        const accessToken = generateAccessToken(user._id, user.role);
-        const refreshToken = generateRefreshToken(user._id, user.role);
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,

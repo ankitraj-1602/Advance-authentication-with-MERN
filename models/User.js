@@ -35,8 +35,8 @@ const userSchema = new mongoose.Schema({
     },
 
     role: {
-        type: String,
-        default: 'user'
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Role'
     },
 
     // field for two FA 
