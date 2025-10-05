@@ -5,11 +5,15 @@ const authRouter = require('./routes/authRoutes');
 const adminRouter = require('./routes/adminRoutes');
 const managerRouter = require('./routes/managerRoutes')
 const cookieParser = require('cookie-parser')
+const helmet = require('helmet')
 
 dotenv.config()
 dbConnect()
 
 const app = express();
+
+app.use(helmet())
+
 app.use(express.json())
 app.use(cookieParser())
 
