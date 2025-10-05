@@ -85,8 +85,8 @@ const login = async (req, res) => {
             return res.status(200).json({ require2FA: true })
         }
 
-        const accessToken = generateAccessToken(user._id);
-        const refreshToken = generateRefreshToken(user._id);
+        const accessToken = generateAccessToken(user._id, user.role);
+        const refreshToken = generateRefreshToken(user._id, user.role);
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
